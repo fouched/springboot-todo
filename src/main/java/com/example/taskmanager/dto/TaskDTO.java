@@ -15,5 +15,5 @@ public class TaskDTO {
     private String description;
     private Category category;
     private boolean isCompleted = false;
-    private UserDTO user;
+//    private UserDTO user;
 }

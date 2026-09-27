@@ -1,5 +1,6 @@
 package com.example.taskmanager.model;
 
+import com.example.taskmanager.dto.UserDTO;
 import com.example.taskmanager.enums.Role;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
@@ -32,4 +33,13 @@ public class User {
     @JsonManagedReference(value = "user-tasks")
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Task> tasks = new ArrayList<>();
+
+    public UserDTO toDTO() {
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId(this.id);
+        userDTO.setEmail(this.email);
+        userDTO.setRole(this.role);
+
+        return userDTO;
+    }
 }

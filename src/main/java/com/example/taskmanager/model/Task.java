@@ -1,5 +1,6 @@
 package com.example.taskmanager.model;
 
+import com.example.taskmanager.dto.TaskDTO;
 import com.example.taskmanager.enums.Category;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
@@ -27,4 +28,15 @@ public class Task {
     @JoinColumn(name = "users_id")
     @JsonBackReference("user-tasks")
     private User user;
+
+    public TaskDTO toDTO() {
+        TaskDTO taskDTO = new TaskDTO();
+        taskDTO.setId(this.id);
+        taskDTO.setTitle(this.title);
+        taskDTO.setDescription(this.description);
+        taskDTO.setCategory(this.category);
+        taskDTO.setCompleted(this.isCompleted);
+
+        return taskDTO;
+    }
 }

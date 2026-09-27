@@ -9,6 +9,7 @@ import com.example.taskmanager.model.User;
 import com.example.taskmanager.repository.UserRepository;
 import com.example.taskmanager.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +19,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -28,6 +31,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final AuthenticationManager authenticationManager;
+    private final SecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
 
     @Override
     public ApiResponse<?> register(RegistrationLoginRequest registrationLoginRequest) {
@@ -50,15 +54,13 @@ public class AuthServiceImpl implements AuthService {
         }
 
         User savedUser = userRepository.save(user);
-        UserDTO userDTO = new UserDTO();
-        userDTO.setEmail(savedUser.getEmail());
-        userDTO.setRole(savedUser.getRole());
-
-        return new ApiResponse<>(201, "User registered successfully", userDTO);
+        return new ApiResponse<>(201, "User registered successfully", savedUser.toDTO());
     }
 
     @Override
-    public ApiResponse<?> login(RegistrationLoginRequest registrationLoginRequest, HttpServletRequest httpServletRequest) {
+    public ApiResponse<?> login(RegistrationLoginRequest registrationLoginRequest,
+                                HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         registrationLoginRequest.getEmail(),
@@ -66,10 +68,18 @@ public class AuthServiceImpl implements AuthService {
                 )
         );
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+//        Old way - things will break eventually...
+//        SecurityContextHolder.getContext().setAuthentication(authentication);
+//        HttpSession httpSession = httpServletRequest.getSession(true);
+//        httpSession.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
 
-        HttpSession httpSession = httpServletRequest.getSession(true);
-        httpSession.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
+        // Build and set the clean context
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(authentication);
+        SecurityContextHolder.setContext(context);
+
+        // Save it to the repository (This guarantees Tomcat pushes 'Set-Cookie' to the network buffer)
+        securityContextRepository.saveContext(context, httpServletRequest, httpServletResponse);
 
         return new ApiResponse<>(200, "login success", null);
     }

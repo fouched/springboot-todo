@@ -4,6 +4,7 @@ import com.example.taskmanager.dto.ApiResponse;
 import com.example.taskmanager.dto.RegistrationLoginRequest;
 import com.example.taskmanager.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +29,8 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<?>> login(
             @Valid @RequestBody RegistrationLoginRequest registrationLoginRequest,
-            HttpServletRequest httpServletRequest) {
-        return ResponseEntity.ok(authService.login(registrationLoginRequest, httpServletRequest));
+            HttpServletRequest httpServletRequest,
+            HttpServletResponse httpServletResponse) {
+        return ResponseEntity.ok(authService.login(registrationLoginRequest, httpServletRequest, httpServletResponse));
     }
 }
