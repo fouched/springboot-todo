@@ -40,17 +40,43 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public ApiResponse<List<TaskDTO>> getTasksByUserAndCategory(String email, Category category) {
-        return null;
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(()-> new NotFoundException("user not found"));
+        List<Task> tasks;
+        if (category != null) {
+            tasks = taskRepository.findByUserAndCategory(user, category);
+        } else {
+            tasks = taskRepository.findByUser(user);
+        }
+        List<TaskDTO> taskDTOs = tasks.stream().map(Task::toDTO).toList();
+        return new ApiResponse<>(200, "Tasks retrieved", taskDTOs);
     }
 
     @Override
-    public ApiResponse<String> deleteTask(Long id) {
-        return null;
+    public ApiResponse<String> deleteTask(Long id, String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("user not found"));
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Task not found"));
+        if (!task.getUser().equals(user)) {
+            throw new NotFoundException("Task not found for this user");
+        }
+        taskRepository.deleteById(id);
+        return new ApiResponse<>(200, "Task deleted", "Task with id " + id + " has been deleted");
     }
 
     @Override
     public ApiResponse<TaskDTO> toggleTaskCompletion(Long id, String email) {
-        return null;
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("user not found"));
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Task not found"));
+        if (!task.getUser().equals(user)) {
+            throw new NotFoundException("Task not found for this user");
+        }
+        task.setCompleted(!task.isCompleted());
+        Task updatedTask = taskRepository.save(task);
+        return new ApiResponse<>(200, "Task completion toggled", updatedTask.toDTO());
     }
 
 }
